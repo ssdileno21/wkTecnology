@@ -67,10 +67,9 @@ object PedidoVendaDao: TPedidoVendaDao
     object MemPedidoProdutosQuantidade: TIntegerField
       FieldName = 'Quantidade'
     end
-    object MemPedidoProdutosVlrUnitario: TFloatField
+    object MemPedidoProdutosVlrUnitario2: TFloatField
       DisplayLabel = 'Vlr.Unit'#225'rio'
       FieldName = 'VlrUnitario'
-      currency = True
     end
     object MemPedidoProdutosVlrTotal: TFloatField
       DisplayLabel = 'Vlr.Total'

@@ -30,10 +30,10 @@ type
     MemPedidoProdutosNPedido: TIntegerField;
     MemPedidoProdutosCodigoProduto: TIntegerField;
     MemPedidoProdutosQuantidade: TIntegerField;
-    MemPedidoProdutosVlrUnitario: TFloatField;
     MemPedidoProdutosVlrTotal: TFloatField;
     MemPedidoProdutosDescricao: TStringField;
     dsMemPedidoProdutos: TDataSource;
+    MemPedidoProdutosVlrUnitario2: TFloatField;
     procedure FDConnection1BeforeConnect(Sender: TObject);
   private
     { Private declarations }
@@ -243,18 +243,20 @@ end;
 
 procedure TPedidoVendaDao.InserirPedido(Value : iPedidosDadosGeraisModel);
 begin
-  FDConnection1.Connected := true;
+   FDConnection1.Connected := true;
   FDConnection1.StartTransaction;
   try
-    FDStoredProc1.Connection := FDConnection1;
-    FDStoredProc1.StoredProcName := 'SP_InserirPedido';
-    FDStoredProc1.Prepare;
-    FDStoredProc1.ParamByName('pNumeroPedido').AsInteger := Value.NumeroPedido;
-    FDStoredProc1.ParamByName('pCodigoCliente').AsInteger :=
-      Value.CodigoCliente;
-    FDStoredProc1.ExecProc;
-    FDStoredProc1.Active := True;
-    FDConnection1.Commit;
+    with FDStoredProc1 do
+    begin
+      Connection := FDConnection1;
+      StoredProcName := 'SP_InserirPedido';
+      Prepare;
+      ParamByName('pNumeroPedido').AsInteger := Value.NumeroPedido;
+      ParamByName('pCodigoCliente').AsInteger := Value.CodigoCliente;
+      ExecProc;
+      Active := True;
+      Commit;
+    end;
     ShowMessage(MESSAGEGRAVARD);
   except on E : Exception do
     begin
@@ -268,6 +270,9 @@ begin
 end;
 
 procedure TPedidoVendaDao.InserirProduto;
+var
+  vAutoincrem, vNumeroPedido, vCodigoProduto, vQuantidade : Integer;
+  vVlrUnitario, vVlrTotal : Double;
 begin
   FDConnection1.Connected := true;
   FDConnection1.StartTransaction;
@@ -277,19 +282,20 @@ begin
     MemPedidoProdutos.First;
     while NOT MemPedidoProdutos.Eof do
     begin
+      vAutoincrem := MemPedidoProdutos.FieldByName('Autoincrem').AsInteger;
+      vNumeroPedido := MemPedidoProdutos.FieldByName('NumeroPedido').AsInteger;
+      vCodigoProduto := MemPedidoProdutos.FieldByName('CodigoProduto').AsInteger;
+      vQuantidade := MemPedidoProdutos.FieldByName('Quantidade').AsInteger;
+      vVlrUnitario := (MemPedidoProdutos.FieldByName('VlrUnitario').AsFloat);
+      vVlrTotal := MemPedidoProdutos.FieldByName('VlrTotal').AsFloat;
+
       FDStoredProc1.Prepare;
-      FDStoredProc1.ParamByName('pAutoincrem').AsInteger :=
-        MemPedidoProdutos.FieldByName('Autoincrem').AsInteger;
-      FDStoredProc1.ParamByName('pNumeroPedido').AsInteger :=
-        MemPedidoProdutos.FieldByName('NumeroPedido').AsInteger;
-      FDStoredProc1.ParamByName('pCodigoProduto').AsInteger :=
-        MemPedidoProdutos.FieldByName('CodigoProduto').AsInteger;
-      FDStoredProc1.ParamByName('pQuantidade').AsInteger :=
-        MemPedidoProdutos.FieldByName('CodigoProduto').AsInteger;
-      FDStoredProc1.ParamByName('pVlrUnitario').AsFloat :=
-        MemPedidoProdutos.FieldByName('VlrUnitario').AsFloat;
-      FDStoredProc1.ParamByName('pVlrTotal').AsFloat :=
-        MemPedidoProdutos.FieldByName('VlrTotal').AsFloat;
+      FDStoredProc1.ParamByName('pAutoincrem').AsInteger := vAutoincrem;
+      FDStoredProc1.ParamByName('pNumeroPedido').AsInteger := vNumeroPedido;
+      FDStoredProc1.ParamByName('pCodigoProduto').AsInteger := vCodigoProduto;
+      FDStoredProc1.ParamByName('pQuantidade').AsInteger := vQuantidade;
+      FDStoredProc1.ParamByName('pVlrUnitario').AsBCD := vVlrUnitario;
+      FDStoredProc1.ParamByName('pVlrTotal').AsBCD := vVlrTotal;
       FDStoredProc1.ExecProc;
       FDStoredProc1.Active := True;
       FDConnection1.Commit;

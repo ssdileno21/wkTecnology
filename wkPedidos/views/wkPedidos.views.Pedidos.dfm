@@ -954,7 +954,6 @@ object frmPedidos: TfrmPedidos
     Font.Style = []
     ParentFont = False
     TabOrder = 1
-    ExplicitLeft = 8
     object Label2: TLabel
       Left = 12
       Top = 11
