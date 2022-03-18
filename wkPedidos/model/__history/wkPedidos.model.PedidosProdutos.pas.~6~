@@ -1,0 +1,45 @@
+unit wkPedidos.model.PedidosProdutos;
+
+interface
+
+uses
+  wkPedidos.model.interfaces.PedidosProdutos;
+
+type
+  TPedidosProdutosModel = class(TInterfacedObject, iPedidosProdutosModel)
+  private
+    FAutoincrem : Integer;
+    FNumeroPedido : Integer;
+    FCodigoProduto : Integer;
+    FQuantidade : Integer;
+    FVlrUnitario : string;
+    FVlrTotal : string;
+
+    function Autoincrem(Value : Integer) : iPedidosProdutosModel; overload;
+    function Autoincrem : Integer; overload;
+
+    function NumeroPedido(Value : Integer) : iPedidosProdutosModel; overload;
+    function NumeroPedido : Integer; overload;
+
+    function CodigoProduto(Value : Integer) : iPedidosProdutosModel; overload;
+    function CodigoProduto : Integer; overload;
+
+    function Quantidade(Value : Integer) : iPedidosProdutosModel; overload;
+    function Quantidade : Integer; overload;
+
+    function VlrUnitario(Value : string) : iPedidosProdutosModel; overload;
+    function VlrUnitario : string; overload;
+
+    function VlrTotal(Value : string) : iPedidosProdutosModel; overload;
+    function VlrTotal : string; overload;
+
+  public
+    constructor Create;
+    destructor Destroy; override;
+    class function New : iPedidosProdutosModel;
+end;
+
+
+implementation
+
+end.

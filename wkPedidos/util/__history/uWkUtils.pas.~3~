@@ -1,0 +1,14 @@
+unit uWkUtils;
+
+interface
+
+const
+    MESSAGEFIXO1 =
+      ' contate o administador do sistema, e informe o erro a seguir:';
+
+    MESSAGEEXCEPCOMPCONTROL =
+      'Erro de controle do componente, ' + MESSAGEFIXO1;
+
+implementation
+
+end.
