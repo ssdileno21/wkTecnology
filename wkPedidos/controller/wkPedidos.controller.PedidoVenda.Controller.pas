@@ -21,10 +21,10 @@ type
       function GravarPedido : iPedidoVendaController;
       function BuscarCliente : iPedidoVendaController;
       function BuscarProduto : iPedidoVendaController;
-      function ProximoCodigoPedido : Integer;
-      function PedidosProdutos: iPedidosProdutosFactory;
       function ExistePedido : Boolean;
       function ExistemPedidoItens : Boolean;
+      procedure ProximoCodigoPedido;
+      procedure ProximoCodigoPedidoProduto;
   end;
 
 type
@@ -42,11 +42,10 @@ type
       function GravarPedido : iPedidoVendaController;
       function BuscarCliente : iPedidoVendaController;
       function BuscarProduto : iPedidoVendaController;
-      function ProximoCodigoPedido : Integer;
-      function PedidosProdutos: iPedidosProdutosFactory;
       function ExistePedido : Boolean;
       function ExistemPedidoItens : Boolean;
-
+      procedure ProximoCodigoPedido;
+      procedure ProximoCodigoPedidoProduto;
     public
       constructor Create;
       destructor Destroy; override;
@@ -70,7 +69,7 @@ end;
 
 function TPedidoVendaControler.BuscarProduto: iPedidoVendaController;
 begin
-
+  FPedidoVendaDAO.BuscarProduto(FPedidosProdutosFactory.PedidosProdutos);
 end;
 
 constructor TPedidoVendaControler.Create;
@@ -103,7 +102,8 @@ end;
 
 function TPedidoVendaControler.GravarPedido: iPedidoVendaController;
 begin
-
+  FPedidoVendaDAO.GravarPedido(FPedidosDadosGeraisFactory.
+    PedidosDadosGerais);
 end;
 
 function TPedidoVendaControler.InserirPedido: iPedidoVendaController;
@@ -129,19 +129,20 @@ begin
   Result := FPedidosDadosGeraisFactory;
 end;
 
-function TPedidoVendaControler.PedidosProdutos: iPedidosProdutosFactory;
-begin
-
-end;
-
 function TPedidoVendaControler.PedidosProdutosFactory: iPedidosProdutosFactory;
 begin
-
+  Result := FPedidosProdutosFactory;
 end;
 
-function TPedidoVendaControler.ProximoCodigoPedido: Integer;
+procedure TPedidoVendaControler.ProximoCodigoPedido;
 begin
+  FPedidoVendaDAO.ProximoCodigoPedido(FPedidosDadosGeraisFactory.
+  PedidosDadosGerais);
+end;
 
+procedure TPedidoVendaControler.ProximoCodigoPedidoProduto;
+begin
+  FPedidoVendaDAO.ProximoCodigoItem(FPedidosProdutosFactory.PedidosProdutos);
 end;
 
 end.

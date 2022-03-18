@@ -3,8 +3,8 @@ object PedidoVendaDao: TPedidoVendaDao
   Height = 537
   Width = 466
   object FDQuery1: TFDQuery
-    Left = 32
-    Top = 160
+    Left = 295
+    Top = 138
   end
   object MemPedido: TFDMemTable
     FetchOptions.AssignedValues = [evMode]
@@ -14,8 +14,8 @@ object PedidoVendaDao: TPedidoVendaDao
     UpdateOptions.AssignedValues = [uvCheckRequired, uvAutoCommitUpdates]
     UpdateOptions.CheckRequired = False
     UpdateOptions.AutoCommitUpdates = True
-    Left = 200
-    Top = 112
+    Left = 104
+    Top = 137
     object MemPedidoNumeroPedido: TIntegerField
       DisplayLabel = 'N'#176' Pedido'
       FieldName = 'NumeroPedido'
@@ -34,10 +34,6 @@ object PedidoVendaDao: TPedidoVendaDao
       currency = True
     end
   end
-  object DataSource1: TDataSource
-    Left = 40
-    Top = 392
-  end
   object MemPedidoProdutos: TFDMemTable
     FetchOptions.AssignedValues = [evMode]
     FetchOptions.Mode = fmAll
@@ -46,20 +42,24 @@ object PedidoVendaDao: TPedidoVendaDao
     UpdateOptions.AssignedValues = [uvCheckRequired, uvAutoCommitUpdates]
     UpdateOptions.CheckRequired = False
     UpdateOptions.AutoCommitUpdates = True
-    Left = 200
-    Top = 176
+    Left = 198
+    Top = 137
     object MemPedidoProdutosAutoincrem: TIntegerField
-      FieldName = 'Seq.'
+      DisplayLabel = 'Seq.'
+      FieldName = 'Autoincrem'
       Visible = False
     end
     object MemPedidoProdutosNPedido: TIntegerField
-      FieldName = 'N'#176' Pedido'
+      DisplayLabel = 'N'#176' Pedido'
+      FieldName = 'NumeroPedido'
       Visible = False
     end
     object MemPedidoProdutosCodigoProduto: TIntegerField
-      FieldName = 'C'#243'digo Produto'
+      DisplayLabel = 'C'#243'd.Produto'
+      FieldName = 'CodigoProduto'
     end
     object MemPedidoProdutosDescricao: TStringField
+      DisplayLabel = 'Descri'#231#227'o'
       DisplayWidth = 60
       FieldName = 'Descricao'
       Size = 150
@@ -68,22 +68,24 @@ object PedidoVendaDao: TPedidoVendaDao
       FieldName = 'Quantidade'
     end
     object MemPedidoProdutosVlrUnitario: TFloatField
-      FieldName = 'Vlr.Unit'#225'rio'
+      DisplayLabel = 'Vlr.Unit'#225'rio'
+      FieldName = 'VlrUnitario'
       currency = True
     end
     object MemPedidoProdutosVlrTotal: TFloatField
-      FieldName = 'Vlr.Total'
+      DisplayLabel = 'Vlr.Total'
+      FieldName = 'VlrTotal'
       currency = True
     end
   end
   object FDStoredProc1: TFDStoredProc
     Connection = FDConnection1
     Left = 32
-    Top = 80
+    Top = 137
   end
   object FDPhysMySQLDriverLink1: TFDPhysMySQLDriverLink
-    Left = 152
-    Top = 16
+    Left = 53
+    Top = 10
   end
   object FDConnection1: TFDConnection
     Params.Strings = (
@@ -93,7 +95,12 @@ object PedidoVendaDao: TPedidoVendaDao
       'DriverID=MySQL')
     LoginPrompt = False
     BeforeConnect = FDConnection1BeforeConnect
-    Left = 32
-    Top = 16
+    Left = 56
+    Top = 64
+  end
+  object dsMemPedidoProdutos: TDataSource
+    DataSet = MemPedidoProdutos
+    Left = 204
+    Top = 200
   end
 end

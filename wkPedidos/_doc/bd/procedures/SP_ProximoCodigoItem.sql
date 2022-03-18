@@ -1,13 +1,10 @@
-USE wkdb;
 DELIMITER $$
 DROP PROCEDURE IF exists SP_ProximoCodigoItem $$
-CREATE PROCEDURE SP_ProximoCodigoItem(in pNumeroPedido INT, OUT ProximoCod INT)
+CREATE DEFINER=`root`@`localhost` PROCEDURE `SP_ProximoCodigoItem`(in pNumeroPedido INT)
 begin
     SELECT 
-		MAX(Autoincrem)
-        INTO ProximoCod
+		MAX(Autoincrem) as ProximoCod
 	FROM tbpedidosprodutos
     WHERE NumeroPedido = pNumeroPedido;    
-end $$
-
+end$$
 DELIMITER ;

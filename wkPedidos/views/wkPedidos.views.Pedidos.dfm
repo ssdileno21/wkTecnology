@@ -633,8 +633,7 @@ object frmPedidos: TfrmPedidos
         0000000000000000000000000000000000000000000000000000000000000000
         000000000000}
       OnClick = sbIniciarClick
-      ExplicitTop = 2
-      ExplicitHeight = 63
+      ExplicitTop = 8
     end
     object sbCancelar: TSpeedButton
       Tag = 6
@@ -955,6 +954,7 @@ object frmPedidos: TfrmPedidos
     Font.Style = []
     ParentFont = False
     TabOrder = 1
+    ExplicitLeft = 8
     object Label2: TLabel
       Left = 12
       Top = 11
@@ -963,7 +963,7 @@ object frmPedidos: TfrmPedidos
       Caption = 'N'#250'mero do pedido:'
     end
     object Label3: TLabel
-      Left = 240
+      Left = 296
       Top = 11
       Width = 102
       Height = 16
@@ -976,11 +976,11 @@ object frmPedidos: TfrmPedidos
       ParentFont = False
     end
     object Label5: TLabel
-      Left = 17
+      Left = 12
       Top = 41
-      Width = 104
+      Width = 131
       Height = 16
-      Caption = 'C'#243'digo do cliente:'
+      Caption = 'C'#243'digo do cliente [F1]:'
     end
     object sbGravarPedido: TSpeedButton
       Tag = 99
@@ -1292,37 +1292,41 @@ object frmPedidos: TfrmPedidos
         000000000000}
       ParentFont = False
       ParentBiDiMode = False
-      ExplicitLeft = 712
+      OnClick = sbGravarPedidoClick
+      ExplicitTop = 8
     end
     object edtNumeroPedido: TEdit
-      Left = 127
+      Left = 152
       Top = 8
-      Width = 100
+      Width = 74
       Height = 24
       TabOrder = 0
     end
     object edtDtaEmissao: TEdit
-      Left = 345
+      Left = 401
       Top = 8
       Width = 100
       Height = 24
       TabOrder = 1
     end
     object edtCodCliente: TEdit
-      Left = 127
+      Left = 152
       Top = 38
-      Width = 50
+      Width = 74
       Height = 24
+      NumbersOnly = True
       TabOrder = 2
       OnExit = edtCodClienteExit
+      OnKeyDown = edtCodClienteKeyDown
     end
     object edtNomeCliente: TEdit
-      Left = 187
+      Left = 232
       Top = 38
-      Width = 519
+      Width = 473
       Height = 24
       TabOrder = 3
       OnExit = edtNomeClienteExit
+      OnKeyDown = edtNomeClienteKeyDown
     end
   end
   object Panel5: TPanel
@@ -1342,10 +1346,10 @@ object frmPedidos: TfrmPedidos
     TabOrder = 2
     object Label6: TLabel
       Left = 12
-      Top = 11
-      Width = 109
+      Top = 12
+      Width = 136
       Height = 16
-      Caption = 'C'#243'digo do produto:'
+      Caption = 'C'#243'digo do produto [F1]:'
       Color = clBlack
       Font.Charset = ANSI_CHARSET
       Font.Color = clBlack
@@ -1371,7 +1375,7 @@ object frmPedidos: TfrmPedidos
       ParentFont = False
     end
     object Label9: TLabel
-      Left = 42
+      Left = 12
       Top = 41
       Width = 79
       Height = 16
@@ -1386,30 +1390,36 @@ object frmPedidos: TfrmPedidos
       ParentFont = False
     end
     object edtCodProduto: TEdit
-      Left = 127
+      Left = 154
       Top = 8
-      Width = 50
+      Width = 74
       Height = 24
+      NumbersOnly = True
       TabOrder = 0
+      OnExit = edtCodProdutoExit
+      OnKeyDown = edtCodProdutoKeyDown
     end
     object edtDescricaoProduto: TEdit
-      Left = 187
+      Left = 232
       Top = 8
-      Width = 519
+      Width = 473
       Height = 24
       TabOrder = 1
+      OnExit = edtDescricaoProdutoExit
+      OnKeyDown = edtDescricaoProdutoKeyDown
     end
     object edtQtdProduto: TEdit
-      Left = 472
+      Left = 474
       Top = 38
       Width = 232
       Height = 24
+      NumbersOnly = True
       TabOrder = 3
     end
     object edtVlrUnitarioProduto: TEdit
-      Left = 127
+      Left = 152
       Top = 38
-      Width = 232
+      Width = 207
       Height = 24
       TabOrder = 2
     end
@@ -2038,6 +2048,7 @@ object frmPedidos: TfrmPedidos
           0000000000000000000000000000000000000000000000000000000000000000
           0000000000000000000000000000000000000000000000000000000000000000
           00000000000000000000}
+        OnClick = sbInserirProdutoClick
         ExplicitLeft = 5
       end
     end
@@ -2077,6 +2088,12 @@ object frmPedidos: TfrmPedidos
       Width = 839
       Height = 271
       Align = alClient
+      Font.Charset = ANSI_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -12
+      Font.Name = 'Arial'
+      Font.Style = []
+      ParentFont = False
       TabOrder = 1
       TitleFont.Charset = ANSI_CHARSET
       TitleFont.Color = clWindowText
@@ -2117,5 +2134,9 @@ object frmPedidos: TfrmPedidos
       TabOrder = 0
       ExplicitHeight = 24
     end
+  end
+  object dsAux: TDataSource
+    Left = 723
+    Top = 367
   end
 end

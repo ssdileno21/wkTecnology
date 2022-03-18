@@ -10,6 +10,7 @@ uses
 
 type
   EnumFormState = (sfsInicial,sfsInsert);
+  EnumItens = (Sim,Nao);
 
 type
   TfrmPedidos = class(TForm)
@@ -44,25 +45,51 @@ type
     sbDeletarProduto: TSpeedButton;
     sbInserirProduto: TSpeedButton;
     sbCancelar: TSpeedButton;
+    dsAux: TDataSource;
     procedure FormCreate(Sender: TObject);
     procedure sbIniciarClick(Sender: TObject);
     procedure sbCancelarClick(Sender: TObject);
     procedure sbAbrirPedidoClick(Sender: TObject);
+    procedure sbInserirProdutoClick(Sender: TObject);
+    procedure edtCodClienteKeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
+    procedure edtCodProdutoKeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
+    procedure edtNomeClienteKeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
+    procedure edtDescricaoProdutoKeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
     procedure edtCodClienteExit(Sender: TObject);
     procedure edtNomeClienteExit(Sender: TObject);
+    procedure edtCodProdutoExit(Sender: TObject);
+    procedure edtDescricaoProdutoExit(Sender: TObject);
+    procedure sbGravarPedidoClick(Sender: TObject);
   private
     { Private declarations }
     FPedidoVenda : iPedidoVendaController;
+    FEstadoForm: EnumFormState;
+    FPossuiItens: EnumItens;
+    function PedidoValidadoParaInserir : Boolean;
+    function ProdutoValidadoParaInserir : Boolean;
+    function PedidoValidadoParaGravar : Boolean;
     procedure FormControl(Value : EnumFormState);
     procedure CarregarPedidos;
     procedure CancelaInsercaoPedidos;
     procedure Iniciar;
     procedure BuscarCodigoCliente;
     procedure BuscarNomeCliente;
+    procedure BuscarCodigoProduto;
+    procedure BuscarDescricaoProduto;
     procedure InserirPedido;
     procedure InserirPedidoProduto;
+    procedure SetEstadoForm(const Value: EnumFormState);
+    procedure SetPossuiItens(const Value: EnumItens);
+    procedure ClearCamposPedido;
+    procedure ClearCamposItens;
   public
     { Public declarations }
+    property EstadoForm : EnumFormState read FEstadoForm write SetEstadoForm;
+    property PossuiItens : EnumItens read FPossuiItens write SetPossuiItens;
   end;
 
 var
@@ -76,6 +103,13 @@ implementation
 
 procedure TfrmPedidos.BuscarCodigoCliente;
 begin
+  if EstadoForm <> sfsInsert then
+    Exit;
+  if edtNomeCliente.Text = '' then
+  begin
+    edtCodCliente.Clear;
+    Exit;
+  end;
   with FPedidoVenda.PedidosDadosGeraisFactory.PedidosDadosGerais do
   begin
     CodigoCliente(0).
@@ -83,10 +117,58 @@ begin
     FPedidoVenda.BuscarCliente;
     edtCodCliente.Text := IntToStr(CodigoCliente);
   end;
+  edtCodProduto.SetFocus;
+end;
+
+procedure TfrmPedidos.BuscarCodigoProduto;
+begin
+  if EstadoForm <> sfsInsert then
+    Exit;
+  if edtDescricaoProduto.Text = '' then
+  begin
+    edtCodProduto.Clear;
+    Exit;
+  end;
+  with FPedidoVenda.PedidosProdutosFactory.PedidosProdutos do
+  begin
+    CodigoProduto(0).
+    DescricaoProduto(edtDescricaoProduto.Text);
+    FPedidoVenda.BuscarProduto;
+    edtCodProduto.Text := IntToStr(CodigoProduto);
+    edtVlrUnitarioProduto.Text := FloatToStr(VlrUnitario);
+  end;
+end;
+
+procedure TfrmPedidos.BuscarDescricaoProduto;
+begin
+  if EstadoForm <> sfsInsert then
+    Exit;
+  if edtCodProduto.Text = '' then
+  begin
+    edtDescricaoProduto.Text;
+    Exit;
+  end;
+  with FPedidoVenda.PedidosProdutosFactory.PedidosProdutos do
+  begin
+    CodigoProduto(StrToIntDef(edtCodProduto.Text,0))
+    .DescricaoProduto('');
+    FPedidoVenda.BuscarProduto;
+    edtDescricaoProduto.Text := DescricaoProduto;
+    edtVlrUnitarioProduto.Text := FloatToStr(VlrUnitario);
+  end;
+  edtQtdProduto.SetFocus;
 end;
 
 procedure TfrmPedidos.BuscarNomeCliente;
 begin
+  if EstadoForm <> sfsInsert then
+    Exit;
+  if edtCodCliente.Text = '' then
+  begin
+    edtNomeCliente.Clear;
+    Exit;
+  end;
+
   with FPedidoVenda.PedidosDadosGeraisFactory.PedidosDadosGerais do
   begin
     CodigoCliente(StrToIntDef(edtCodCliente.Text,0))
@@ -94,6 +176,7 @@ begin
     FPedidoVenda.BuscarCliente;
     edtNomeCliente.Text := NomeCliente;
   end;
+  edtCodProduto.SetFocus;
 end;
 
 procedure TfrmPedidos.CancelaInsercaoPedidos;
@@ -110,30 +193,97 @@ begin
   end;
 end;
 
+procedure TfrmPedidos.ClearCamposItens;
+begin
+  edtCodProduto.Clear;
+  edtDescricaoProduto.Clear;
+  edtVlrUnitarioProduto.Clear;
+  edtQtdProduto.Clear;
+end;
+
+procedure TfrmPedidos.ClearCamposPedido;
+begin
+  edtCodCliente.Clear;
+  edtNomeCliente.Clear;
+end;
+
 procedure TfrmPedidos.edtCodClienteExit(Sender: TObject);
 begin
   BuscarNomeCliente;
 end;
 
+procedure TfrmPedidos.edtCodClienteKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+  if Key = VK_DELETE then
+    ClearCamposPedido;
+end;
+
+procedure TfrmPedidos.edtCodProdutoExit(Sender: TObject);
+begin
+  BuscarDescricaoProduto;
+end;
+
+procedure TfrmPedidos.edtCodProdutoKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+  if Key = VK_DELETE then
+    ClearCamposItens;
+end;
+
+procedure TfrmPedidos.edtDescricaoProdutoExit(Sender: TObject);
+begin
+  BuscarDescricaoProduto
+end;
+
+procedure TfrmPedidos.edtDescricaoProdutoKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+  if Key = VK_DELETE then
+    ClearCamposItens;
+end;
+
 procedure TfrmPedidos.edtNomeClienteExit(Sender: TObject);
 begin
-  BuscarCodigoCliente;
+  BuscarNomeCliente;
+end;
+
+procedure TfrmPedidos.edtNomeClienteKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+  if Key = VK_DELETE then
+    ClearCamposPedido;
 end;
 
 procedure TfrmPedidos.FormControl(Value: EnumFormState);
 var
   i : Integer;
 begin
+  SetEstadoForm(Value);
   try
     for I := 0 to Self.ComponentCount -1 do
     begin
        if (Self.Components[i] is TEdit) then
        begin
          TEdit(Self.Components[i]).Clear;
-         TEdit(Self.Components[i]).Enabled := (Value = sfsInsert);
+         TEdit(Self.Components[i]).Enabled := (EstadoForm = sfsInsert);
        end;
      end;
-     edtNumeroPedido.Enabled := (Value = sfsInicial);
+     sbAbrirPedido.Enabled := (EstadoForm = sfsInicial);
+     sbIniciar.Enabled := (EstadoForm = sfsInicial);
+     sbCancelar.Enabled := (EstadoForm = sfsInsert);
+     sbInserirProduto.Enabled := (EstadoForm = sfsInsert);
+     sbDeletarProduto.Enabled := (EstadoForm = sfsInsert);
+     sbGravarPedido.Enabled := (EstadoForm = sfsInsert);
+     edtNumeroPedido.Enabled := (EstadoForm = sfsInicial);
+     edtDtaEmissao.Enabled := False;
+     edtVlrUnitarioProduto.Enabled := False;
+     edtValorTotalPedido.Enabled := False;
+     if EstadoForm = sfsInicial then
+     begin
+      dbgProdutos.DataSource := dsAux;
+      DBNavigator1.DataSource := dsAux;
+     end;
   except on E : Exception do
     ShowMessage(MESSAGEEXCEPCOMPCONTROL + E.Message);
   end;
@@ -147,30 +297,87 @@ end;
 
 procedure TfrmPedidos.Iniciar;
 begin
-  edtNumeroPedido.Text := IntToStr(FPedidoVenda.ProximoCodigoPedido);
+  FPedidoVenda.ProximoCodigoPedido;
+  with FPedidoVenda.PedidosDadosGeraisFactory.PedidosDadosGerais do
+    edtNumeroPedido.Text := IntToStr(NumeroPedido);
+  SetPossuiItens(Nao);
+  edtCodCliente.SetFocus;
 end;
 
 procedure TfrmPedidos.InserirPedido;
 begin
-  if NOT FPedidoVenda.ExistePedido then
+  if (EstadoForm <> sfsInsert) then
+    Exit;
+  if FPedidoVenda.ExistePedido then
+    Exit;
+  if NOT PedidoValidadoParaInserir then
   begin
-    with FPedidoVenda.PedidosDadosGeraisFactory.PedidosDadosGerais do
-    begin
-      NumeroPedido(StrToIntDef(edtNumeroPedido.Text,0)).
-      CodigoCliente(StrToIntDef(edtCodCliente.Text,0));
-      FPedidoVenda.InserirPedido;
-    end;
+    ShowMessage(MESSAGEVALIDARCAMPOSPEDIDOS);
+    Exit;
+  end;
+  with FPedidoVenda.PedidosDadosGeraisFactory.PedidosDadosGerais do
+  begin
+    NumeroPedido(StrToIntDef(edtNumeroPedido.Text,0)).
+    CodigoCliente(StrToIntDef(edtCodCliente.Text,0));
+    FPedidoVenda.InserirPedido;
   end;
 end;
 
 procedure TfrmPedidos.InserirPedidoProduto;
 begin
-{  with FPedidoVenda.PedidosProdutosFactory.PedidosProdutos do
+  if (EstadoForm <> sfsInsert) then
+    Exit;
+  if NOT ProdutoValidadoParaInserir then
+  begin
+    ShowMessage(MESSAGEVALIDARCAMPOSPEDIDOSPRODUTOS);
+    Exit;
+  end;
+  SetPossuiItens(Nao);
+  with FPedidoVenda.PedidosProdutosFactory.PedidosProdutos do
     begin
+      FPedidoVenda.ProximoCodigoPedidoProduto;
+      Autoincrem(Autoincrem).
       NumeroPedido(StrToIntDef(edtNumeroPedido.Text,0)).
-      CodigoCliente(StrToIntDef(edtCodCliente.Text,0));
-      FPedidoVenda.InserirPedido;
-    end;}
+      CodigoProduto(StrToIntDef(edtCodProduto.Text,0)).
+      DescricaoProduto(edtDescricaoProduto.Text).
+      Quantidade(StrToIntDef(edtQtdProduto.Text,0)).
+      VlrUnitario(StrToFloatDef(edtVlrUnitarioProduto.Text,0.00)).
+      VlrTotal(CalculaValorTotalProduto(edtQtdProduto,edtVlrUnitarioProduto));
+      FPedidoVenda.InserirProduto;
+      dbgProdutos.DataSource := DsPedidosProdutos;
+      DBNavigator1.DataSource := DsPedidosProdutos;
+      if NOT dbgProdutos.DataSource.DataSet.IsEmpty then
+        SetPossuiItens(Sim);
+      edtCodProduto.SetFocus;
+      ClearCamposItens;
+    end;
+end;
+
+function TfrmPedidos.PedidoValidadoParaGravar: Boolean;
+begin
+  if PossuiItens = sim then
+  begin
+      FPedidoVenda.GravarPedido;
+      FormControl(sfsInicial);
+  end;
+end;
+
+function TfrmPedidos.PedidoValidadoParaInserir: Boolean;
+var
+  vVal,vVal2 : Boolean;
+begin
+  vVal := (edtNumeroPedido.Text <> '') or (edtNumeroPedido.Text <> '0');
+  vVal2 := (edtCodCliente.Text <> '') or (edtCodCliente.Text <> '0');
+  Result := (vVal and vVal2);
+end;
+
+function TfrmPedidos.ProdutoValidadoParaInserir: Boolean;
+var
+  vVal,vVal2 : Boolean;
+begin
+  vVal := (edtCodProduto.Text <> '') and (edtCodProduto.Text <> '0');
+  vVal2 := (edtVlrUnitarioProduto.Text <> '') and (edtQtdProduto.Text <> '');
+  Result := (vVal and vVal2);
 end;
 
 procedure TfrmPedidos.sbAbrirPedidoClick(Sender: TObject);
@@ -183,28 +390,33 @@ begin
   FormControl(sfsInicial);
 end;
 
+procedure TfrmPedidos.sbGravarPedidoClick(Sender: TObject);
+begin
+  PedidoValidadoParaGravar;
+end;
+
 procedure TfrmPedidos.sbIniciarClick(Sender: TObject);
 begin
   FormControl(sfsInsert);
   Iniciar;
 end;
 
+procedure TfrmPedidos.sbInserirProdutoClick(Sender: TObject);
+begin
+  //Gravar informações iniciais do pedido
+  InserirPedido;
+  //Somente inserir itens do pedido
+  InserirPedidoProduto;
+end;
+
+procedure TfrmPedidos.SetEstadoForm(const Value: EnumFormState);
+begin
+  FEstadoForm := Value;
+end;
+
+procedure TfrmPedidos.SetPossuiItens(const Value: EnumItens);
+begin
+  FPossuiItens := Value;
+end;
+
 end.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

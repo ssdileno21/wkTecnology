@@ -2,6 +2,9 @@ unit wkPedidos.model.interfaces.PedidosProdutos;
 
 interface
 
+uses
+  Data.DB;
+
 type
   iPedidosProdutosModel = interface
     ['{99495AFC-1768-49F6-AB0C-EA163C9AC36F}']
@@ -26,6 +29,10 @@ type
 
     function VlrTotal(Value : Double) : iPedidosProdutosModel; overload;
     function VlrTotal : Double; overload;
+
+    function DsPedidosProdutos(
+        aDataSource : TDataSource) : iPedidosProdutosModel; overload;
+    function DsPedidosProdutos : TDataSource; overload;
 end;
 
   iPedidosProdutosFactory = interface

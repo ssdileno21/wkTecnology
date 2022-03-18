@@ -3,7 +3,7 @@ unit wkPedidos.model.PedidosProdutos;
 interface
 
 uses
-  wkPedidos.model.interfaces.PedidosProdutos;
+  wkPedidos.model.interfaces.PedidosProdutos, Data.DB;
 
 type
   TPedidosProdutosModel = class(TInterfacedObject, iPedidosProdutosModel)
@@ -15,6 +15,7 @@ type
     FQuantidade : Integer;
     FVlrUnitario : Double;
     FVlrTotal : Double;
+    FDsPedidosProdutos : TDataSource;
 
     function Autoincrem(Value : Integer) : iPedidosProdutosModel; overload;
     function Autoincrem : Integer; overload;
@@ -36,6 +37,10 @@ type
 
     function VlrTotal(Value : Double) : iPedidosProdutosModel; overload;
     function VlrTotal : Double; overload;
+
+    function DsPedidosProdutos(
+        aDataSource : TDataSource) : iPedidosProdutosModel; overload;
+    function DsPedidosProdutos : TDataSource; overload;
 
   public
     constructor Create;
@@ -95,6 +100,18 @@ begin
   inherited;
 end;
 
+function TPedidosProdutosModel.DsPedidosProdutos(
+  aDataSource: TDataSource): iPedidosProdutosModel;
+begin
+  Result := Self;
+  FDsPedidosProdutos := aDataSource;
+end;
+
+function TPedidosProdutosModel.DsPedidosProdutos: TDataSource;
+begin
+  Result := FDsPedidosProdutos;
+end;
+
 class function TPedidosProdutosModel.New: iPedidosProdutosModel;
 begin
   Result := Self.Create;
@@ -110,7 +127,6 @@ function TPedidosProdutosModel.NumeroPedido(
 begin
   Result := Self;
   FNumeroPedido := Value;
-
 end;
 
 function TPedidosProdutosModel.Quantidade: Integer;

@@ -11,7 +11,8 @@ uses
   wkPedidos.model.PedidosProdutos in 'model\wkPedidos.model.PedidosProdutos.pas',
   wkPedidos.model.factory.PedidosProdutos in 'model\factory\wkPedidos.model.factory.PedidosProdutos.pas',
   wkPedidos.model.interfaces.PedidosProdutos in 'model\interfaces\wkPedidos.model.interfaces.PedidosProdutos.pas',
-  uWkUtils in 'util\uWkUtils.pas';
+  uWkUtils in 'util\uWkUtils.pas',
+  wkPedidos.model.exceptions.Pedidos in 'model\exceptions\wkPedidos.model.exceptions.Pedidos.pas';
 
 {$R *.res}
 
