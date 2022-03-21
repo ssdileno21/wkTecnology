@@ -2099,6 +2099,7 @@ object frmPedidos: TfrmPedidos
       TitleFont.Height = -11
       TitleFont.Name = 'Arial Narrow'
       TitleFont.Style = []
+      OnKeyDown = dbgProdutosKeyDown
     end
   end
   object Panel4: TPanel

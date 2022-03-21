@@ -36,27 +36,41 @@ type
     MemPedidoProdutosVlrUnitario2: TFloatField;
     procedure FDConnection1BeforeConnect(Sender: TObject);
   private
+    FProdutoId: Integer;
+    FVlrTotalPedido: Double;
+    FPedidosGerModel : iPedidosDadosGeraisModel;
+    FPedidosPrdModel : iPedidosProdutosModel;
     { Private declarations }
-    procedure ExecutaComando(Value : string; pTipo : Integer=0);
-    procedure InserirPedido(Value : iPedidosDadosGeraisModel);
+    procedure InserirPedido;
     procedure InserirProduto;
+    procedure InserirProdutoBD(pAutoincrem, pNumeroPedido, pCodigoProduto,
+    pQuantidade : Integer; pVlrUnitario, pVlrTotal : Double);
+    procedure SetProdutoId(const Value: Integer);
+    procedure SetVlrTotalPedido(const Value: Double);
   public
     { Public declarations }
+    procedure CreateModel(
+      pGerais : iPedidosDadosGeraisModel;
+      pProdutos : iPedidosProdutosModel);
     function ExistePedido : Boolean;
     function ExistemPedidoItens : Boolean;
-    procedure ProximoCodigoPedido(Value : iPedidosDadosGeraisModel);
-    procedure ProximoCodigoItem(Value : iPedidosProdutosModel);
-    procedure AbrirPedido(Value : iPedidosDadosGeraisModel; pNumeroPedido :
-      Integer);
-    procedure GravaPedidoTemp(Value : iPedidosDadosGeraisModel);
-    procedure GravaPedidoProdutosTemp(Value : iPedidosProdutosModel);
-    procedure BuscarCliente(Value : iPedidosDadosGeraisModel);
-    procedure BuscarProduto(Value : iPedidosProdutosModel);
-    procedure DeletarProduto(Value : iPedidosProdutosModel);
-    procedure GravarPedido(Value : iPedidosDadosGeraisModel);
-
-
+    procedure ProximoCodigoPedido;
+    function ProximoCodigoItem(pNumPedido : Integer) : Integer;
+    procedure AbrirPedido(pNumeroPedido : Integer);
+    procedure GravaPedidoTemp;
+    procedure GravaPedidoProdutosTemp;
+    procedure BuscarCliente;
+    procedure BuscarProduto;
+    procedure DeletarProduto;
+    procedure GravarPedido;
+    procedure Cancelar;
+    procedure AtualizaVlrTotalTemp;
+    property ProdutoId : Integer read FProdutoId write SetProdutoId;
+    property VlrTotalPedido : Double read FVlrTotalPedido write
+      SetVlrTotalPedido;
   end;
+
+
 
 var
   PedidoVendaDao: TPedidoVendaDao;
@@ -67,32 +81,52 @@ implementation
 
 {$R *.dfm}
 
-procedure TPedidoVendaDao.AbrirPedido(Value: iPedidosDadosGeraisModel;
-  pNumeroPedido: Integer);
+procedure TPedidoVendaDao.AbrirPedido(pNumeroPedido: Integer);
 begin
 
 end;
 
-procedure TPedidoVendaDao.BuscarCliente(Value: iPedidosDadosGeraisModel);
+procedure TPedidoVendaDao.AtualizaVlrTotalTemp;
+var
+  vVlr : Double;
+begin
+  with MemPedidoProdutos do
+  begin
+    Open;
+    First;
+    while NOT Eof do
+    begin
+      vVlr := (vVlr + FieldByName('VlrTotal').AsFloat);
+      MemPedidoProdutos.Next;
+    end;
+    SetVlrTotalPedido(vVlr);
+    FPedidosGerModel.ValorTotal(VlrTotalPedido);
+  end;
+end;
+
+procedure TPedidoVendaDao.BuscarCliente;
 begin
   FDConnection1.Connected := true;
   FDConnection1.StartTransaction;
   try
-    FDStoredProc1.Close;
-    FDStoredProc1.Active := False;
-    FDStoredProc1.Connection := FDConnection1;
-    FDStoredProc1.StoredProcName := 'SP_BuscaCliente';
-    FDStoredProc1.Prepare;
-    if Value.CodigoCliente > 0 then
-      FDStoredProc1.ParamByName('pCodigo').AsInteger := Value.CodigoCliente;
-    if Value.NomeCliente <> '' then
-      FDStoredProc1.ParamByName('pNome').AsString := Value.NomeCliente;
-    FDStoredProc1.Open;
-    FDStoredProc1.Active := True;
-    if NOT FDStoredProc1.IsEmpty then
+    with FDStoredProc1 do
     begin
-      Value.CodigoCliente(FDStoredProc1.FieldByName('Codigo').AsInteger);
-      Value.NomeCliente(FDStoredProc1.FieldByName('Nome').AsString);
+      Close;
+      Active := False;
+      Connection := FDConnection1;
+      StoredProcName := 'SP_BuscaCliente';
+      Prepare;
+      if FPedidosGerModel.CodigoCliente > 0 then
+        ParamByName('pCodigo').AsInteger := FPedidosGerModel.CodigoCliente;
+      if FPedidosGerModel.NomeCliente <> '' then
+        ParamByName('pNome').AsString := FPedidosGerModel.NomeCliente;
+      Open;
+      Active := True;
+      if NOT IsEmpty then
+      begin
+      FPedidosGerModel.CodigoCliente(FieldByName('Codigo').AsInteger);
+      FPedidosGerModel.NomeCliente(FieldByName('Nome').AsString);
+    end;
     end;
     FDConnection1.Commit;
   except on E : Exception do
@@ -106,26 +140,28 @@ begin
   FDConnection1.Connected := False;
 end;
 
-procedure TPedidoVendaDao.BuscarProduto(Value: iPedidosProdutosModel);
+procedure TPedidoVendaDao.BuscarProduto;
 begin
   FDConnection1.Connected := true;
   FDConnection1.StartTransaction;
   try
-    FDStoredProc1.Connection := FDConnection1;
-    FDStoredProc1.StoredProcName := 'SP_BuscaProduto';
-    FDStoredProc1.Prepare;
-    if Value.CodigoProduto > 0 then
-      FDStoredProc1.ParamByName('pCodigo').AsInteger := Value.CodigoProduto;
-    if Value.DescricaoProduto <> '' then
-      FDStoredProc1.ParamByName('pDescricao').AsString :=
-        Value.DescricaoProduto;
-    FDStoredProc1.Open;
-    FDStoredProc1.Active := True;
-    if NOT FDStoredProc1.IsEmpty then
+    with FDStoredProc1 do
     begin
-      Value.CodigoProduto(FDStoredProc1.FieldByName('Codigo').AsInteger);
-      Value.DescricaoProduto(FDStoredProc1.FieldByName('Descricao').AsString);
-      Value.VlrUnitario(FDStoredProc1.FieldByName('PrecoVenda').AsFloat);
+      Connection := FDConnection1;
+      StoredProcName := 'SP_BuscaProduto';
+      Prepare;
+      if FPedidosPrdModel.CodigoProduto > 0 then
+        ParamByName('pCodigo').AsInteger := FPedidosPrdModel.CodigoProduto;
+      if FPedidosPrdModel.DescricaoProduto <> '' then
+        ParamByName('pDescricao').AsString := FPedidosPrdModel.DescricaoProduto;
+      Open;
+      Active := True;
+      if NOT IsEmpty then
+      begin
+        FPedidosPrdModel.CodigoProduto(FieldByName('Codigo').AsInteger);
+        FPedidosPrdModel.DescricaoProduto(FieldByName('Descricao').AsString);
+        FPedidosPrdModel.VlrUnitario(FieldByName('PrecoVenda').AsFloat);
+      end;
     end;
     FDConnection1.Commit;
   except on E : Exception do
@@ -139,28 +175,8 @@ begin
   FDConnection1.Connected := False;
 end;
 
-procedure TPedidoVendaDao.DeletarProduto(Value: iPedidosProdutosModel);
+procedure TPedidoVendaDao.DeletarProduto;
 begin
-
-end;
-
-procedure TPedidoVendaDao.ExecutaComando(Value: string; pTipo : Integer);
-begin
-  FDConnection1.Connected := true;
-  FDConnection1.StartTransaction;
-  try
-    FDQuery1.SQL.Clear;
-    FDQuery1.SQL.Text := Value;
-
-    FDConnection1.Commit;
-  except on E : Exception do
-    begin
-        FDConnection1.Rollback;
-        ShowMessage(MESSAGEFIXO1 +#13+
-                    'Classe do erro: '+E.ClassName+#13+
-                    'Mensagem de erro: '+E.Message);
-    end;
-  end;
 
 end;
 
@@ -180,24 +196,30 @@ begin
     ExtractFilePath(Application.ExeName) + 'libmysql.dll';
 end;
 
-procedure TPedidoVendaDao.GravaPedidoProdutosTemp(Value: iPedidosProdutosModel);
+procedure TPedidoVendaDao.GravaPedidoProdutosTemp;
+var
+  vcount : Integer;
 begin
   try
-    //MemPedidoProdutos.Close;
     MemPedidoProdutos.Open;
+    vcount := ProdutoId;
     with MemPedidoProdutos do
     begin
       Append;
-      FieldByName('Autoincrem').AsInteger := Value.Autoincrem;
-      FieldByName('NumeroPedido').AsInteger := Value.NumeroPedido;
-      FieldByName('CodigoProduto').AsInteger := Value.CodigoProduto;
-      FieldByName('Descricao').AsString := Value.DescricaoProduto;
-      FieldByName('Quantidade').AsInteger := Value.Quantidade;
-      FieldByName('VlrUnitario').AsFloat := Value.VlrUnitario;
-      FieldByName('VlrTotal').AsFloat := (Value.Quantidade * Value.VlrUnitario);
+      FieldByName('Autoincrem').AsInteger := vcount;
+      FieldByName('NumeroPedido').AsInteger := FPedidosPrdModel.NumeroPedido;
+      FieldByName('CodigoProduto').AsInteger := FPedidosPrdModel.CodigoProduto;
+      FieldByName('Descricao').AsString := FPedidosPrdModel.DescricaoProduto;
+      FieldByName('Quantidade').AsInteger := FPedidosPrdModel.Quantidade;
+      FieldByName('VlrUnitario').AsFloat := FPedidosPrdModel.VlrUnitario;
+      FieldByName('VlrTotal').AsFloat := (FPedidosPrdModel.Quantidade *
+        FPedidosPrdModel.VlrUnitario);
       Post;
+      Inc(vcount);
+      SetProdutoId(vcount);
+      AtualizaVlrTotalTemp;
       Refresh;
-      Value.DsPedidosProdutos(dsMemPedidoProdutos);
+      FPedidosPrdModel.DsPedidosProdutos(dsMemPedidoProdutos);
     end;
   except on E : Exception do
     begin
@@ -209,7 +231,7 @@ begin
   end;
 end;
 
-procedure TPedidoVendaDao.GravaPedidoTemp(Value : iPedidosDadosGeraisModel);
+procedure TPedidoVendaDao.GravaPedidoTemp;
 begin
   try
     MemPedido.Close;
@@ -217,10 +239,12 @@ begin
     with MemPedido do
     begin
       Append;
-      FieldByName('NumeroPedido').AsInteger := Value.NumeroPedido;
-      FieldByName('CodigoCliente').AsInteger := Value.CodigoCliente;
-      FieldByName('ValorTotal').AsFloat := Value.ValorTotal;
+      FieldByName('NumeroPedido').AsInteger := FPedidosGerModel.NumeroPedido;
+      FieldByName('CodigoCliente').AsInteger := FPedidosGerModel.CodigoCliente;
       Post;
+      SetProdutoId(1);
+      SetVlrTotalPedido(0.00);
+      FPedidosGerModel.ValorTotal(VlrTotalPedido);
     end;
 
   except on E : Exception do
@@ -233,30 +257,36 @@ begin
   end;
 end;
 
-procedure TPedidoVendaDao.GravarPedido(Value : iPedidosDadosGeraisModel);
+procedure TPedidoVendaDao.GravarPedido;
 begin
+  //GRAVA PEDIDO
+  InserirPedido;
    //INSERIR PRODUTOS
   InserirProduto;
-  //GRAVA PEDIDO
-  InserirPedido(Value);
 end;
 
-procedure TPedidoVendaDao.InserirPedido(Value : iPedidosDadosGeraisModel);
+procedure TPedidoVendaDao.InserirPedido;
 begin
-   FDConnection1.Connected := true;
+  FDConnection1.Connected := true;
   FDConnection1.StartTransaction;
   try
+    MemPedido.Open;
+    if MemPedido.IsEmpty then
+      Exit;
     with FDStoredProc1 do
     begin
       Connection := FDConnection1;
       StoredProcName := 'SP_InserirPedido';
       Prepare;
-      ParamByName('pNumeroPedido').AsInteger := Value.NumeroPedido;
-      ParamByName('pCodigoCliente').AsInteger := Value.CodigoCliente;
+      ParamByName('pNumeroPedido').AsInteger :=
+        MemPedido.FieldByName('NumeroPedido').AsInteger;
+      ParamByName('pCodigoCliente').AsInteger :=
+        MemPedido.FieldByName('CodigoCliente').AsInteger;
+      ParamByName('pValorTotal').AsBCD := VlrTotalPedido;
       ExecProc;
-      Active := True;
-      Commit;
     end;
+    MemPedido.Close;
+    FDConnection1.Commit;
     ShowMessage(MESSAGEGRAVARD);
   except on E : Exception do
     begin
@@ -269,35 +299,24 @@ begin
   FDConnection1.Connected := False;
 end;
 
-procedure TPedidoVendaDao.InserirProduto;
-var
-  vAutoincrem, vNumeroPedido, vCodigoProduto, vQuantidade : Integer;
-  vVlrUnitario, vVlrTotal : Double;
+procedure TPedidoVendaDao.InserirProdutoBD(pAutoincrem, pNumeroPedido,
+pCodigoProduto, pQuantidade : Integer; pVlrUnitario, pVlrTotal : Double);
 begin
   FDConnection1.Connected := true;
   FDConnection1.StartTransaction;
   try
-    FDStoredProc1.Connection := FDConnection1;
-    FDStoredProc1.StoredProcName := 'SP_InserirPedidoProduto';
-    MemPedidoProdutos.First;
-    while NOT MemPedidoProdutos.Eof do
+    with FDStoredProc1 do
     begin
-      vAutoincrem := MemPedidoProdutos.FieldByName('Autoincrem').AsInteger;
-      vNumeroPedido := MemPedidoProdutos.FieldByName('NumeroPedido').AsInteger;
-      vCodigoProduto := MemPedidoProdutos.FieldByName('CodigoProduto').AsInteger;
-      vQuantidade := MemPedidoProdutos.FieldByName('Quantidade').AsInteger;
-      vVlrUnitario := (MemPedidoProdutos.FieldByName('VlrUnitario').AsFloat);
-      vVlrTotal := MemPedidoProdutos.FieldByName('VlrTotal').AsFloat;
-
-      FDStoredProc1.Prepare;
-      FDStoredProc1.ParamByName('pAutoincrem').AsInteger := vAutoincrem;
-      FDStoredProc1.ParamByName('pNumeroPedido').AsInteger := vNumeroPedido;
-      FDStoredProc1.ParamByName('pCodigoProduto').AsInteger := vCodigoProduto;
-      FDStoredProc1.ParamByName('pQuantidade').AsInteger := vQuantidade;
-      FDStoredProc1.ParamByName('pVlrUnitario').AsBCD := vVlrUnitario;
-      FDStoredProc1.ParamByName('pVlrTotal').AsBCD := vVlrTotal;
-      FDStoredProc1.ExecProc;
-      FDStoredProc1.Active := True;
+      Connection := FDConnection1;
+      StoredProcName := 'SP_InserirPedidoProduto';
+      Prepare;
+      ParamByName('pAutoincrem').AsInteger := pAutoincrem;
+      ParamByName('pNumeroPedido').AsInteger := pNumeroPedido;
+      ParamByName('pCodigoProduto').AsInteger := pCodigoProduto;
+      ParamByName('pQuantidade').AsInteger := pQuantidade;
+      ParamByName('pVlrUnitario').AsBCD := pVlrUnitario;
+      ParamByName('pVlrTotal').AsBCD := pVlrTotal;
+      ExecProc;
       FDConnection1.Commit;
     end;
   except on E : Exception do
@@ -311,22 +330,66 @@ begin
   FDConnection1.Connected := False;
 end;
 
-procedure TPedidoVendaDao.ProximoCodigoItem(Value: iPedidosProdutosModel);
+procedure TPedidoVendaDao.InserirProduto;
+begin
+    with MemPedidoProdutos do
+    begin
+      Open;
+      First;
+      while NOT Eof do
+      begin
+        InserirProdutoBD (  FieldByName('Autoincrem').AsInteger,
+                            FieldByName('NumeroPedido').AsInteger,
+                            FieldByName('CodigoProduto').AsInteger,
+                            FieldByName('Quantidade').AsInteger,
+                            FieldByName('VlrUnitario').AsFloat,
+                            FieldByName('VlrTotal').AsFloat);
+        MemPedidoProdutos.Next;
+      end;
+    end;
+end;
+
+procedure TPedidoVendaDao.Cancelar;
+begin
+  try
+    MemPedido.Close;
+    MemPedido.Open;
+    MemPedido.EmptyDataSet;
+
+    MemPedidoProdutos.Close;
+    MemPedidoProdutos.Open;
+    MemPedidoProdutos.EmptyDataSet;
+  finally
+
+  end;
+end;
+
+procedure TPedidoVendaDao.CreateModel(pGerais: iPedidosDadosGeraisModel;
+  pProdutos: iPedidosProdutosModel);
+begin
+  FPedidosGerModel := pGerais;
+  FPedidosPrdModel := pProdutos;
+end;
+
+function TPedidoVendaDao.ProximoCodigoItem(pNumPedido : Integer) : Integer;
 var
   cont : Integer;
 begin
   FDConnection1.Connected := true;
   FDConnection1.StartTransaction;
   try
-    FDStoredProc1.Connection := FDConnection1;
-    FDStoredProc1.StoredProcName := 'SP_ProximoCodigoItem';
-    FDStoredProc1.Prepare;
-    FDStoredProc1.Open;
-    FDStoredProc1.Active := True;
-    cont := FDStoredProc1.FieldByName('ProximoCod').AsInteger;
-    if cont = 0 then
+    with FDStoredProc1 do
+    begin
+      Connection := FDConnection1;
+      StoredProcName := 'SP_ProximoCodigoItem';
+      Prepare;
+      ParamByName('pNumeroPedido').AsInteger := pNumPedido;
+      Open;
+      Active := True;
+      cont := FieldByName('ProximoCod').AsInteger;
       Inc(cont);
-    Value.Autoincrem(cont);
+      Result := cont;
+    end;
     FDConnection1.Commit;
   except on E : Exception do
     begin
@@ -339,23 +402,25 @@ begin
   FDConnection1.Connected := False;
 end;
 
-procedure TPedidoVendaDao.ProximoCodigoPedido(Value: iPedidosDadosGeraisModel);
+procedure TPedidoVendaDao.ProximoCodigoPedido;
 var
   cont : Integer;
 begin
-  FDConnection1.Connected := true;
-  FDConnection1.StartTransaction;
   try
-    FDStoredProc1.Connection := FDConnection1;
-    FDStoredProc1.StoredProcName := 'SP_ProximoCodigoPedido';
-    FDStoredProc1.Prepare;
-    FDStoredProc1.Open;
-    FDStoredProc1.Active := True;
-    cont := FDStoredProc1.FieldByName('ProximoCod').AsInteger;
-    if cont = 0 then
+    FDConnection1.Connected := true;
+    FDConnection1.StartTransaction;
+    with FDStoredProc1 do
+    begin
+      Connection := FDConnection1;
+      StoredProcName := 'SP_ProximoCodigoPedido';
+      Prepare;
+      Open;
+      Active := True;
+      cont := FieldByName('ProximoCod').AsInteger;
       Inc(cont);
-    Value.NumeroPedido(cont);
-    FDConnection1.Commit;
+      FPedidosGerModel.NumeroPedido(cont);
+    end;
+      FDConnection1.Commit;
   except on E : Exception do
     begin
         FDConnection1.Rollback;
@@ -365,6 +430,16 @@ begin
     end;
   end;
   FDConnection1.Connected := False;
+end;
+
+procedure TPedidoVendaDao.SetProdutoId(const Value: Integer);
+begin
+  FProdutoId := Value;
+end;
+
+procedure TPedidoVendaDao.SetVlrTotalPedido(const Value: Double);
+begin
+  FVlrTotalPedido := Value;
 end;
 
 end.

@@ -20,6 +20,5 @@ begin
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
   Application.CreateForm(TfrmPedidos, frmPedidos);
-  Application.CreateForm(TPedidoVendaDao, PedidoVendaDao);
   Application.Run;
 end.

@@ -1,0 +1,3 @@
+arquivo do banco de dados
+base de dados: wkdb
+caminho: C:\ProgramData\MySQL\MySQL Server 5.7\Data

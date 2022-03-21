@@ -4,17 +4,14 @@ DROP PROCEDURE IF exists SP_InserirPedido $$
 CREATE PROCEDURE SP_InserirPedido(
 	in 	pNumeroPedido int, 		
         pCodigoCliente int,
-        pVlrTotal Decimal(10,2)        
+        pValorTotal DECIMAL(10,2)
 )
 begin
-	INSERT INTO tbpedidosdadosgerais (NumeroPedido, CodigoCliente, VlrTotal)
+	INSERT INTO tbpedidosdadosgerais (NumeroPedido, CodigoCliente, ValorTotal)
 		Select 
 			pNumeroPedido, 
-            pCodigoCliente, 
-            (	SELECT SUM(ValorTotal) 
-				FROM tbpedidosprodutos p
-                where P.NumeroPedido = pNumeroPedido
-			);
+            pCodigoCliente,
+            pValorTotal;
 end $$
 
 DELIMITER ;

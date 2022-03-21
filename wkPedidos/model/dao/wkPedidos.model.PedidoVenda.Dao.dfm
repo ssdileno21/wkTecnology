@@ -47,7 +47,6 @@ object PedidoVendaDao: TPedidoVendaDao
     object MemPedidoProdutosAutoincrem: TIntegerField
       DisplayLabel = 'Seq.'
       FieldName = 'Autoincrem'
-      Visible = False
     end
     object MemPedidoProdutosNPedido: TIntegerField
       DisplayLabel = 'N'#176' Pedido'
